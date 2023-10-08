@@ -1,0 +1,193 @@
+{
+  "main": {
+    "id": "34c3523df6f07df4",
+    "type": "split",
+    "children": [
+      {
+        "id": "2d40c319328e0ec2",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ee1a856594102d72",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Math/Light Transport/Spherical Harmonics.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "0563cce004efc766",
+    "type": "split",
+    "children": [
+      {
+        "id": "b97506f1a2a8365f",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "1249d7d1ee58bb18",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "b612c70aa45edf07",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "33d52addbd0efb17",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "acbf7fff6936f683",
+    "type": "split",
+    "children": [
+      {
+        "id": "e5b7c876cde2888c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "08f98d2ab2afd023",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Math/Light Transport/Spherical Harmonics.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": true,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "49635f5acd5d2b4e",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Math/Light Transport/Spherical Harmonics.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "d3a73d026944a9c9",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "93d4840060acccf6",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Math/Light Transport/Spherical Harmonics.md"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "table-editor-obsidian:Advanced Tables Toolbar": false,
+      "obsidian-advanced-slides:Show Slide Preview": false,
+      "webpage-html-export:Export Vault to HTML": false
+    }
+  },
+  "active": "ee1a856594102d72",
+  "lastOpenFiles": [
+    "Shaders/World position from depth.md",
+    "Shaders/VRChat proposals.md",
+    "Shaders/SH to Unity shader coefficients.md",
+    "Shaders/Matrix inversion.md",
+    "Shaders/Anti-aliasing for 2D sdf.md",
+    "Math/Sampling discrete distribution in O(1).md",
+    "Math/R(n) low discrepancy sequence.md",
+    "Math/Monte carlo methods.md",
+    "Math/Integration primer.md",
+    "Math/Hindley-Milner.md",
+    "Math/Dirac delta for unit sphere.md",
+    "Math/Constructing an orthonormal basis around a normal.md",
+    "Math/Light Transport/Why divide albedo by π.md",
+    "Math/Light Transport/The rendering equation.md",
+    "Math/Light Transport/Spherical integrals.md",
+    "Math/Light Transport/Spherical Harmonics.md",
+    "Math/Light Transport/Ratio for diffuse and specular bounce.md",
+    "Math/Light Transport/Polarized light.md",
+    "Math/Light Transport/Perfect reflection and refraction PDF.md",
+    "Math/Light Transport/N dot L from rendering equation.md",
+    "Math/Light Transport/Direct light sampling PDF.md",
+    "Math/Light Transport/Cosine weighted sampling.md",
+    "Spherical.md",
+    "TODO.md",
+    "Attachments/Pasted image 20231005233459.png",
+    "Attachments/Pasted image 20231005232635.png",
+    "Attachments/Pasted image 20231005232528.png",
+    "Attachments/Pasted image 20231005232357.png",
+    "Attachments/Pasted image 20231005215702.png",
+    "Attachments/Pasted image 20230923221034.png",
+    "Attachments/Pasted image 20230923220434.png",
+    "Attachments/Pasted image 20230923220012.png",
+    "Attachments/Pasted image 20230923215710.png",
+    "Attachments/Pasted image 20230923214729.png",
+    "Shaders",
+    "Math/Light.md",
+    "Attachments",
+    "Math",
+    "Math/Light Transport"
+  ]
+}
