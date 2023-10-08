@@ -257,6 +257,7 @@ Where:
 - $\theta$ is the angle between the surface normal and the incident light direction.
 - $A_l$ is the coefficient associated with the l'th SH level, of the clamped cosine term projected into the SH basis.
 - $Y_l^0$ is the SH basis function at level $l$, index 0.
+
 It's important to note here that we are only indexing the SH coefficients of the for $A(\theta)$ projected into the SH basis using the level $l$, and omitting the index in said level. The clamped cosine term is _only_ dependent on the polar angle $\theta$, and not the azimuthal angle $\phi$. This should make intuitive sense - the total amount of light reflected at a point on a lambertian surface is only dependent on how shallow the angle of incidence is. Functions with this property - azimuthal independence - will only have non-zero coefficients for the SH basis functions with index 0, ie. those in the middle column of the SH pyramid shown earlier. This column of basis functions are called the _zonal harmonics_. Due to this property, we can any coefficient that isn't associated with a zonal harmonic - and we end up with only as many coefficients for the projection of $A(\theta)$ as we have levels of SH.
 
 Ramamoorthi then goes on to derive an analytical expression for the coefficients $A_l$:
