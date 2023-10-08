@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Math/Light Transport/Spherical integrals.md",
+                "file": "Math/Light Transport/The rendering equation.md",
                 "mode": "source",
                 "source": false
               }
@@ -65,7 +65,8 @@
               "state": {}
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "horizontal",
@@ -85,7 +86,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Math/Light Transport/Spherical integrals.md",
+                "file": "Math/Light Transport/The rendering equation.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,7 +103,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Math/Light Transport/Spherical integrals.md",
+                "file": "Math/Light Transport/The rendering equation.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -125,7 +126,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Math/Light Transport/Spherical integrals.md"
+                "file": "Math/Light Transport/The rendering equation.md"
               }
             }
           }
@@ -151,6 +152,7 @@
   "active": "ee1a856594102d72",
   "lastOpenFiles": [
     "Math/Solid angle.md",
+    "Math/Light Transport/Direct light sampling PDF.md",
     "Math/Light Transport/Spherical integrals.md",
     "Math/Light Transport/Spherical Harmonics.md",
     "Attachments/Pasted image 20231008194242.png",
@@ -167,7 +169,6 @@
     "Math/Dirac delta for unit sphere.md",
     "Math/Constructing an orthonormal basis around a normal.md",
     "Math/Light Transport/Cosine weighted sampling.md",
-    "Math/Light Transport/Direct light sampling PDF.md",
     "Math/Light Transport/N dot L from rendering equation.md",
     "Math/Light Transport/Perfect reflection and refraction PDF.md",
     "Math/Light Transport/Ratio for diffuse and specular bounce.md",

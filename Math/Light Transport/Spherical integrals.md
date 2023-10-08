@@ -36,7 +36,7 @@ $$
 $$ L_o = L_e + \int_\Omega f_r \ L_i \ cos (\theta) \ d\omega$$
 Where $\Omega$ denotes a unit hemisphere of directions. Why does this look different from what we've seen, and what exactly is $d\omega$?
 
-The formulation of the rendering equation shown earlier looks different because it is integrating over _solid angle domain_. The relationship between differential solid angle and differential spherical coordinates is:
+The formulation of the rendering equation shown earlier looks different because it is integrating over _[[Solid Angle]] domain_. The relationship between differential solid angle and differential spherical coordinates is:
 $$
 d\omega = \sin(\theta) d\theta d\phi
 $$

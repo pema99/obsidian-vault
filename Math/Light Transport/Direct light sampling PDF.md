@@ -1,7 +1,7 @@
 ---
 
 ---
-When we estimate the rendering equation by monte carlo integration, we typically integrate over the solid angle domain, but with direct light sampling, we use the (surface) area domain of the light sources, and need to convert between the 2.
+When we estimate the rendering equation by monte carlo integration, we typically integrate over the [[Solid Angle]] domain, but with direct light sampling, we use the (surface) area domain of the light sources, and need to convert between the 2.
 
 An integral for direct lighting can be written as so:
 $$\int_{\Omega_d} f_r(x, w_i, w_o) L_i(x, w_i) w_i \cdot w_n dw$$

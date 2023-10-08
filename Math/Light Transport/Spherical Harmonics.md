@@ -179,7 +179,7 @@ f(\theta, \phi) \approx \sum_{l=0}^n \sum_{m=-l}^l c_l^m \cdot Y_l^m(\theta, \ph
 $$
 Where $n$ is the order (amount of levels) of the basis we are using.
 
-> Note: The reason why I use Spherical Coordinates in the above description, despite having just explained that we usually prefer to use unit vectors, is primarily to make the integral more tenable. The space of unit vectors doesn't map intuitively to a pleasant domain of integration. Alternatively, we could write the double integral as a single integral in solid angle domain, but integrals in solid angle domain are not easy to calculate directly, so we usually translate to spherical coordinates before calculating anyways.
+> Note: The reason why I use Spherical Coordinates in the above description, despite having just explained that we usually prefer to use unit vectors, is primarily to make the integral more tenable. The space of unit vectors doesn't map intuitively to a pleasant domain of integration. Alternatively, we could write the double integral as a single integral in [[Solid Angle]] domain, but integrals in solid angle domain are not easy to calculate directly, so we usually translate to spherical coordinates before calculating anyways.
 # Convolution
 Spherical Harmonics have a nice property that lets us efficiently calculate [convolutions](https://en.wikipedia.org/wiki/Convolution). Consider this case of the convolution operation:
 $$
