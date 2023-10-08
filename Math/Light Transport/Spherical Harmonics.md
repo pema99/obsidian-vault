@@ -185,7 +185,7 @@ Spherical Harmonics have a nice property that lets us efficiently calculate [con
 $$
 \int_{S^2} F(\omega)G(\omega) \ d\omega
 $$
-Where $S^2$ denotes the 2-sphere aka. regular 3-dimensional sphere, and $d\omega$ is differential solid angle (see [[Spherical integrals]]).
+Where $S^2$ denotes the 2-sphere aka. regular 3-dimensional sphere, and $d\omega$ is differential solid angle (see [[Spherical integrals]] and [[Solid angle]]).
 
 The integral looks a bit daunting at first, but if we happen to have both $F(\omega)$ and $G(\omega)$ represented as Spherical Harmonics, we can calculate the result with ease using the following identity:
 $$
@@ -200,8 +200,8 @@ Two quantities of particular importance when rendering scenes with global illumi
 | ------------ | -------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | Radiant flux | Watts (Joule/Second), denoted $W$                       | Energy received or emitted per unit time.                                         |
 | Irradiance   | Watts per square meter, denoted $W/m^2$                 | Radiant flux _received_ by a surface per unit area.                                |
-| Radiance     | Watts per steradian per square meter, denoted $W/(m^2 \cdot sr)$ | Radiant flux received or emitted per unit solid angle, per unit _projected_ area. |
-- [ ] TODO: Explain solid angle
+| Radiance     | Watts per steradian per square meter, denoted $W/(m^2 \cdot sr)$ | Radiant flux received or emitted per unit [[Solid angle]], per unit _projected_ area. |
+
 Radiance is the quantity typically associated with a single ray of light, while irradiance is the quantity associated with a point on a surface. You can think of radiance as roughly being being the energy carried by a ray of light, and irradiance as the total energy incident on a point on a surface from all directions.
 
 We can calculate the irradiance $E(x, n)$ at a given point on a surface by integrating radiance over the hemisphere of directions centered around the normal vector at the point, attenuated by the cosine of the angle between incoming light direction and normal vector:

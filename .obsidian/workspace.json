@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Math/Light Transport/Spherical Harmonics.md",
+                "file": "Math/Light Transport/Spherical integrals.md",
                 "mode": "source",
                 "source": false
               }
@@ -48,7 +48,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "solid angle",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -85,7 +85,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Math/Light Transport/Spherical Harmonics.md",
+                "file": "Math/Light Transport/Spherical integrals.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,7 +102,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Math/Light Transport/Spherical Harmonics.md",
+                "file": "Math/Light Transport/Spherical integrals.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -125,7 +125,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Math/Light Transport/Spherical Harmonics.md"
+                "file": "Math/Light Transport/Spherical integrals.md"
               }
             }
           }
@@ -150,28 +150,30 @@
   },
   "active": "ee1a856594102d72",
   "lastOpenFiles": [
+    "Math/Solid angle.md",
+    "Math/Light Transport/Spherical integrals.md",
+    "Math/Light Transport/Spherical Harmonics.md",
+    "Attachments/Pasted image 20231008194242.png",
+    "Math/Sampling discrete distribution in O(1).md",
     "Shaders/World position from depth.md",
     "Shaders/VRChat proposals.md",
     "Shaders/SH to Unity shader coefficients.md",
     "Shaders/Matrix inversion.md",
     "Shaders/Anti-aliasing for 2D sdf.md",
-    "Math/Sampling discrete distribution in O(1).md",
     "Math/R(n) low discrepancy sequence.md",
     "Math/Monte carlo methods.md",
-    "Math/Integration primer.md",
     "Math/Hindley-Milner.md",
+    "Math/Integration primer.md",
     "Math/Dirac delta for unit sphere.md",
     "Math/Constructing an orthonormal basis around a normal.md",
-    "Math/Light Transport/Why divide albedo by π.md",
-    "Math/Light Transport/The rendering equation.md",
-    "Math/Light Transport/Spherical integrals.md",
-    "Math/Light Transport/Spherical Harmonics.md",
+    "Math/Light Transport/Cosine weighted sampling.md",
+    "Math/Light Transport/Direct light sampling PDF.md",
+    "Math/Light Transport/N dot L from rendering equation.md",
+    "Math/Light Transport/Perfect reflection and refraction PDF.md",
     "Math/Light Transport/Ratio for diffuse and specular bounce.md",
     "Math/Light Transport/Polarized light.md",
-    "Math/Light Transport/Perfect reflection and refraction PDF.md",
-    "Math/Light Transport/N dot L from rendering equation.md",
-    "Math/Light Transport/Direct light sampling PDF.md",
-    "Math/Light Transport/Cosine weighted sampling.md",
+    "Math/Light Transport/The rendering equation.md",
+    "Math/Light Transport/Why divide albedo by π.md",
     "Spherical.md",
     "TODO.md",
     "Attachments/Pasted image 20231005233459.png",
@@ -183,9 +185,7 @@
     "Attachments/Pasted image 20230923220434.png",
     "Attachments/Pasted image 20230923220012.png",
     "Attachments/Pasted image 20230923215710.png",
-    "Attachments/Pasted image 20230923214729.png",
     "Shaders",
-    "Math/Light.md",
     "Attachments",
     "Math",
     "Math/Light Transport"

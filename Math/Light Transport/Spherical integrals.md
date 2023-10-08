@@ -36,18 +36,16 @@ $$
 $$ L_o = L_e + \int_\Omega f_r \ L_i \ cos (\theta) \ d\omega$$
 Where $\Omega$ denotes a unit hemisphere of directions. Why does this look different from what we've seen, and what exactly is $d\omega$?
 
-The formulation of the rendering equation shown earlier looks different because it is integrating over _solid angle domain_. I'll talk more about solid angles later, but for now, note that:
+The formulation of the rendering equation shown earlier looks different because it is integrating over _solid angle domain_. The relationship between differential solid angle and differential spherical coordinates is:
 $$
 d\omega = \sin(\theta) d\theta d\phi
 $$
 Thus:
 $$
-\int_\Omega f(x) d\omega_x = \int_0^{2\pi} \int_0^{\frac{\pi}{2}} f(\theta, \phi) sin(\theta) d\theta d\phi 
+\int_\Omega f(\omega ) d\omega = \int_0^{2\pi} \int_0^{\frac{\pi}{2}} f(\theta, \phi) sin(\theta) d\theta d\phi 
 $$
 A final note on spherical integrals: Why use this alternate integration domain and not just spherical coordinates? 
 
-Essentially, this is just because it makes the math much nicer. There is nothing stopping us from writing the rendering equation out with a parameterization using spherical coordinates.
-
-Solid angles are ubiquotous in light transport because they have some nice properties we will see later.
+Essentially, this is just because it makes the math much nicer. There is nothing stopping us from writing the rendering equation out with a parameterization using spherical coordinates. You can think of $\omega$ as roughly representing a ray direction. See [[Solid angle]] for more info on solid angles.
 
 #light-transport #math 
