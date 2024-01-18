@@ -26,7 +26,7 @@ $$
 $$
 We can imagine dividing the sphere into infinitely many infinitesimal surface patches, each associated with a ray. Therefore, when reading integrals in solid angle domain, such as the one above, it can be helpful to think of the variable being integrated over ($\omega$) as meaning "a ray direction", and the differential solid angle ($d\omega$) as meaning "the infinitely small portion of the the total sphere which any given ray accounts for".
 
-It should come as no surprise that numerical computation of spherical integrals like the one above are often done by shooting a bunch of rays in random directions from the an observers point of view, and "averaging" their contribution using [[Monte carlo methods]]. 
+It should come as no surprise that numerical computation of spherical integrals like the one above are often done by shooting a bunch of rays in random directions from an observers point of view, and "averaging" their contribution using [[Monte carlo methods]]. 
 
 See [[Spherical integrals]] for more info on integrating over the sphere and hemisphere.
 

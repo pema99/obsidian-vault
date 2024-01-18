@@ -13,13 +13,38 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Math/Light Transport/The rendering equation.md",
+                "file": "Math/Light Transport/Spherical Harmonics.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "1150120689285aad",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Path Tracing presentation.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "9ee7a95c9067a0e5",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Math/R(n) low discrepancy sequence.md",
                 "mode": "source",
                 "source": false
               }
             }
           }
-        ]
+        ],
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -65,8 +90,7 @@
               "state": {}
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "horizontal",
@@ -86,7 +110,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Math/Light Transport/The rendering equation.md",
+                "file": "Math/R(n) low discrepancy sequence.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -103,7 +127,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Math/Light Transport/The rendering equation.md",
+                "file": "Math/R(n) low discrepancy sequence.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -126,7 +150,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Math/Light Transport/The rendering equation.md"
+                "file": "Math/R(n) low discrepancy sequence.md"
               }
             }
           }
@@ -134,7 +158,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 200,
+    "collapsed": true
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -145,16 +170,24 @@
       "templates:Insert template": false,
       "command-palette:Open command palette": false,
       "table-editor-obsidian:Advanced Tables Toolbar": false,
-      "obsidian-advanced-slides:Show Slide Preview": false,
-      "webpage-html-export:Export Vault to HTML": false
+      "webpage-html-export:Export Vault to HTML": false,
+      "marp:Marp: Open Preview": false
     }
   },
-  "active": "ee1a856594102d72",
+  "active": "9ee7a95c9067a0e5",
   "lastOpenFiles": [
-    "Math/Solid angle.md",
-    "Math/Light Transport/Direct light sampling PDF.md",
+    "Math/Hindley-Milner.md",
+    "Math/Light Transport/N dot L from rendering equation.md",
     "Math/Light Transport/Spherical integrals.md",
+    "Math/Solid angle.md",
+    "Math/Monte carlo methods.md",
+    "Math/Light Transport/Cosine weighted sampling.md",
     "Math/Light Transport/Spherical Harmonics.md",
+    "Path Tracing presentation.md",
+    "AudioLink version getters.md",
+    "Untitled",
+    "Math/Light Transport/The rendering equation.md",
+    "Math/Light Transport/Direct light sampling PDF.md",
     "Attachments/Pasted image 20231008194242.png",
     "Math/Sampling discrete distribution in O(1).md",
     "Shaders/World position from depth.md",
@@ -163,20 +196,14 @@
     "Shaders/Matrix inversion.md",
     "Shaders/Anti-aliasing for 2D sdf.md",
     "Math/R(n) low discrepancy sequence.md",
-    "Math/Monte carlo methods.md",
-    "Math/Hindley-Milner.md",
     "Math/Integration primer.md",
     "Math/Dirac delta for unit sphere.md",
     "Math/Constructing an orthonormal basis around a normal.md",
-    "Math/Light Transport/Cosine weighted sampling.md",
-    "Math/Light Transport/N dot L from rendering equation.md",
     "Math/Light Transport/Perfect reflection and refraction PDF.md",
     "Math/Light Transport/Ratio for diffuse and specular bounce.md",
     "Math/Light Transport/Polarized light.md",
-    "Math/Light Transport/The rendering equation.md",
     "Math/Light Transport/Why divide albedo by π.md",
     "Spherical.md",
-    "TODO.md",
     "Attachments/Pasted image 20231005233459.png",
     "Attachments/Pasted image 20231005232635.png",
     "Attachments/Pasted image 20231005232528.png",

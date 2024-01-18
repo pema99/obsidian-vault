@@ -222,7 +222,8 @@ Recall that the radiometric quantity associated with light incident on a surface
 Path tracing involves shooting a bunch of light rays from a point, bouncing them around the scene, and attenuating their contribution whenever they hit a surface. Note however that the radiometric quantity associated with a ray of light is _radiance_, not irradiance. I'll ignore this mismatch in desired quantities for now, and first explain how to project radiance into the L2 SH basis. Below is some pseudo-C#-code to do this. Note that I'm not going to bother with color - we'll just be using monochromatic lighting for simplicity.
 ```cs
 // Given a probe position, returns the SH coefficients for radiance
-// incoming from all directions to that position.
+// incoming from all directions to that position, using monte carlo
+// integration.
 float[] ProjectRadianceIntoSH(Vector3 probePosition)
 {
 	float[] radianceSH = new float[9];
@@ -237,10 +238,14 @@ float[] ProjectRadianceIntoSH(Vector3 probePosition)
 		{
 			// SHBasis(n, d) evaluates the n'th SH basis function
 			// given a direction vector d.
-			radianceSH[coefficient] = radiance * SHBasis(n, rayDirection);
+			radianceSH[coefficient] += radiance * SHBasis(n, rayDirection);
 		}
     }
-    return radianceSH;
+    
+    // Monte carlo normalization
+    float reciprocalSampleCount = 1.0f / TotalSamplesPerProbe;
+    float reciprocalUniformSphereDensity = 4.0f * Math.PI;
+    return radianceSH * reciprocalSampleCount * reciprocalUniformSphereDensity;
 }
 ```
 For convenience, I've used a flat index for indexing SH basis functions, rather than an explicit level $l$ and index-in-level $m$. Index 0 thus means basis function $Y_0^0$, index 1 is $Y_1^{-1}$, index 2 is $Y_1^0$ etc. Using L2 SH means we have to store 9 coefficients for the 9 basis functions. This pseudocode is essentially just implementing the SH projection operator described earlier, with radiance in a given direction, $L(x, w)$ as the function to project.
@@ -385,6 +390,33 @@ float colorAtSurface = ShadeSH(irradianceSH, surfaceAlbedo, surfaceNormal);
 
 In reality, instead of using a single probe, we would bake multiple probes, yielding several sets of SH coefficients, and then interpolate the few nearest ones to get a set of interpolated SH coefficients for irradiance. This is just a dumbed down example.
 # Stupid SH tricks (Peter-Pike Sloan)
+```
+fC0 * fLight[0] - fC3 * fLight[6]
+- fC1 * fLight[3] * x
+- fC1 * fLight[1] * y
++ fC1 * fLight[2] * z
++ fC2 * fLight[4] * xy
+- fC2 * fLight[5] * yz
++ 3.0 * fC3 * fLight[6] * z^2
+- fC2 * fLight[7] * zx
++ fC4 * fLight[8] * (x^2 - y^2)
+```
+
+```
+(1/(2*sqrt(pi))) * f_0
+
+- (sqrt(3)/(3*sqrt(pi))) * f_3 * x
+- (sqrt(3)/(3*sqrt(pi))) * f_1 * y
++ (sqrt(3)/(3*sqrt(pi))) * f_2 * z
+
++ (sqrt(15)/(8*sqrt(pi))) * f_4 * xy
+- (sqrt(15)/(8*sqrt(pi))) * f_5 * yz
+- (sqrt(5)/(16*sqrt(pi))) * f_6
++ 3.0 * (sqrt(5)/(16*sqrt(pi))) * f_6 * z^2
+- (sqrt(15)/(8*sqrt(pi))) * f_7 * zx
++ (sqrt(5)/(16*sqrt(pi))*0.5) * f_8 * (x^2 - y^2)
+
+```
 # Ringing
 
 #math #global-illumination #light-transport #path-tracing 
