@@ -180,18 +180,24 @@ $$
 Where $n$ is the order (amount of levels) of the basis we are using.
 
 > Note: The reason why I use Spherical Coordinates in the above description, despite having just explained that we usually prefer to use unit vectors, is primarily to make the integral more tenable. The space of unit vectors doesn't map intuitively to a pleasant domain of integration. Alternatively, we could write the double integral as a single integral in [[Solid Angle]] domain, but integrals in solid angle domain are not easy to calculate directly, so we usually translate to spherical coordinates before calculating anyways.
-# Convolution
-Spherical Harmonics have a nice property that lets us efficiently calculate [convolutions](https://en.wikipedia.org/wiki/Convolution). Consider this case of the convolution operation:
+# Integral of product
+Spherical Harmonics have a nice property that lets us efficiently calculate the integral of the product of 2 spherical functions. Consider the following such integral:
 $$
 \int_{S^2} F(\omega)G(\omega) \ d\omega
 $$
 Where $S^2$ denotes the 2-sphere aka. regular 3-dimensional sphere, and $d\omega$ is differential solid angle (see [[Spherical integrals]] and [[Solid angle]]).
 
-The integral looks a bit daunting at first, but if we happen to have both $F(\omega)$ and $G(\omega)$ represented as Spherical Harmonics, we can calculate the result with ease using the following identity:
+The integral looks a bit daunting at first, but if we happen to have both $F(\omega)$ and $G(\omega)$ represented as Spherical Harmonics, we can calculate the result with relative ease using the following identity:
 $$
-\int_{S^2} F(\omega)G(\omega) \ d\omega = \sum_{l=0}^\infty\sum_{m=-l}^l f_l^m g_l^m
+\int_{S^2} F(\omega)G(\omega) \ d\omega = \sum_{l=0}^\infty \sum_{m=-l}^l f_l^m g_l^m
 $$
-Where $f_l^m$ are SH coefficients for $F(\omega)$ and $g_l^m$ are SH coefficients for $G(\omega)$. This is just another inner product.
+Where $f_l^m$ are SH coefficients for $F(\omega)$ and $g_l^m$ are SH coefficients for $G(\omega)$.
+# Convolution
+One can also calculate [convolutions](https://en.wikipedia.org/wiki/Convolution) of spherical harmonics without too much effort, using the following convolution theorem:
+$$
+(f\star g)_l^m = \sum_{l=0}^\infty\sum_{m=-l}^l \sqrt{\frac{4\pi}{2l+1}} f_l^0 g_l^m
+$$
+ Here, $f \star g$ denotes the convolution of the spherical functions $f$ and $g$, and $(f \star g)_l^m$ is thus the coefficients of the convolution projected into the SH basis. It is important to note that this operation is **only well defined when $f$ is circularly symmetric around the Z axis**. Functions with this property, also known as azimuthal independence, will only have non-zero coefficients for the SH basis functions with index 0, ie. those in the middle column of the SH pyramid shown earlier. This column of basis functions are called the _zonal harmonics_.
 # Use in global illumination
 ## A brief primer on radiometry
 Two quantities of particular importance when rendering scenes with global illumination (GI) are radiance and irradiance. I'll briefly summarize what these quantities mean below:
@@ -210,7 +216,7 @@ E(x, n) = \int_{\Omega(n)} L(x, \omega) max(\omega\cdot n, 0) \ d\omega
 $$
 Here $\Omega(n)$ denotes the hemisphere centered around normal vector $n$, $x$ is the point on the surface. $\omega$ denotes incoming light direction. The $\omega \cdot n$ term is the dot of the normal and incoming light direction, ie. the cosine of the angle between the 2. The entire $max(\omega \cdot n, 0)$ is sometimes aptly called the "clamped cosine term" and is sometimes written as $\lfloor\omega \cdot n\rfloor$.
 
->  The cosine term is necessary due to how projected area varies with the angle between the surface normal and the normal of the area being projected. Roughly speaking, we want to weigh light coming from shallow angles less, as that light is spread over a larger area. For some context, see the images in [[Cosine weighted sampling#Why]].
+>  Note: The cosine term is necessary due to how projected area varies with the angle between the surface normal and the normal of the area being projected. Roughly speaking, we want to weigh light coming from shallow angles less, as that light is spread over a larger area. For some context, see the images in [[Cosine weighted sampling#Why]].
 ## Light probes
 One technique for lighting scenes with GI is _light probes_. These are positions in space with which we associate a quantity of light. When it is time to shade a surface point, we can grab the few nearest probes to said point, interpolate between them, and use them to get an estimate of the indirect light contribution. That begs the question - what exactly do we store in each light probe? Spherical Harmonics turn out to be a great a fit, for a few main reasons:
 - They are trivial to interpolate between.
@@ -238,7 +244,7 @@ float[] ProjectRadianceIntoSH(Vector3 probePosition)
 		{
 			// SHBasis(n, d) evaluates the n'th SH basis function
 			// given a direction vector d.
-			radianceSH[coefficient] += radiance * SHBasis(n, rayDirection);
+			radianceSH[n] += radiance * SHBasis(n, rayDirection);
 		}
     }
     
@@ -263,7 +269,7 @@ Where:
 - $A_l$ is the coefficient associated with the l'th SH level, of the clamped cosine term projected into the SH basis.
 - $Y_l^0$ is the SH basis function at level $l$, index 0.
 
-It's important to note here that we are only indexing the SH coefficients of the for $A(\theta)$ projected into the SH basis using the level $l$, and omitting the index in said level. The clamped cosine term is _only_ dependent on the polar angle $\theta$, and not the azimuthal angle $\phi$. This should make intuitive sense - the total amount of light reflected at a point on a lambertian surface is only dependent on how shallow the angle of incidence is. Functions with this property - azimuthal independence - will only have non-zero coefficients for the SH basis functions with index 0, ie. those in the middle column of the SH pyramid shown earlier. This column of basis functions are called the _zonal harmonics_. Due to this property, we can any coefficient that isn't associated with a zonal harmonic - and we end up with only as many coefficients for the projection of $A(\theta)$ as we have levels of SH.
+It's important to note here that we are only indexing the SH coefficients of $A(\theta)$ projected into the SH basis using the level $l$, and omitting the index in said level. The clamped cosine term is _only_ dependent on the polar angle $\theta$, and not the azimuthal angle $\phi$. This should make intuitive sense - the total amount of light reflected at a point on a lambertian surface is only dependent on how shallow the angle of incidence is. Due to this property, we can discard any coefficient that isn't associated with a zonal harmonic (remember, these are basis functions with index 0) - and we end up with only as many coefficients for the projection of $A(\theta)$ as we have levels of SH.
 
 Ramamoorthi then goes on to derive an analytical expression for the coefficients $A_l$:
 $$
@@ -281,15 +287,19 @@ E(n) = \int_{\Omega(n)} L(\omega) max(\omega\cdot n, 0) \ d\omega = \int_{\Omega
 $$
 Note that we have dropped the surface position $x$ from irradiance function $E(x, n)$. This is because we assume the illumination is _distant_, which means changes in position have negligible effect.
 
-Given the nice property I described in the section [[Spherical Harmonics#Convolution]], one may now be tempted calculate irradiance integral like so:
+Given the nice property I described in the section [[Spherical Harmonics#Integral of product]], one may now be tempted calculate irradiance integral like so:
 $$
 E(n) = \int_{\Omega(n)} L(\omega) A(\theta) \ d\omega = \sum_{l=0}^\infty\sum_{m=-l}^l L_l^m A_l
 $$
-However, **this would be incorrect**. The reason is a mismatch in coordinate systems. Incoming radiance, $L(x,\omega)$ is with respect to _global coordinates_, while the clamped cosine term $A(\omega)$ is with a _local coordinates_ ie. the coordinate system where the surface normal at the point we are shading is pointing straight upwards. We need to introduce a rotation term in order to account for this. I'll omit some details here, and name this term somewhat opaquely $R_l^m(n)$:
+However, **this would be incorrect**. The reason is a mismatch in coordinate systems. Incoming radiance, $L(x,\omega)$ is defined with respect to _global coordinates_, while the clamped cosine term $A(\omega)$ is with a _local coordinates_ ie. the coordinate system where the surface normal at the point we are shading is pointing straight upwards. We need to introduce a rotation term in order to account for this. I'll omit some details here, as this term is quite complicated to calculate, and just name it somewhat opaquely $R_l^m(n)$. With this term, we can now write irradiance as:
 $$
 E(n) = \sum_{l=0}^\infty\sum_{m=-l}^l L_l^m A_l \ R_l^m(n)
 $$
-Ramamoorthi shows that this rotation term can be rewritten to:
+The effect that this term has when multiplied onto the summand is to transform the input to the radiance function $L(\omega)$ from local coordinate space, which is the domain of our irradiance integral, into global coordinate space, which is the domain of the radiance function, i.e.:
+$$
+E(n) = \int_{\Omega(n)} L(LocalToGlobal(\omega)) A(\theta) \ d\omega
+$$
+Ramamoorthi shows that the rotation term can be rewritten to:
 $$
 R_l^m(n) = \sqrt{\frac{4\pi}{2l+1}}Y_l^m(n)
 $$
@@ -313,7 +323,11 @@ It then becomes evident from the last 2 equations that:
 $$
 E_l^m = L_l^m\hat{A}_l
 $$
-Phrased in plain English, if we have _radiance_ in SH, given by coefficients $L_l^m$, and we want _irradiance_ in SH, given by coefficients $E_l^m$, we need only multiply the radiance coefficients by a factor $\hat{A}_l$ which varies per SH level. Since we already have an analytical expression for $A_l$, and $A_l$ differs from $\hat{A}_l$ only by a constant factor per SH level, we can derive an analytical expression for $\hat{A}_l$ too, which is exactly what Ramamoorthi does next:
+Phrased in plain English, if we have _radiance_ in SH, given by coefficients $L_l^m$, and we want _irradiance_ in SH, given by coefficients $E_l^m$, we need only multiply the radiance coefficients by a factor $\hat{A}_l$ which varies only per SH level.
+
+> Note: You may notice that the above expression looks quite similar to the expression in the  [[Spherical Harmonics#Convolution]] section. This is because the transformation from radiance to irradiance just that - a convolution of radiance with the clamped cosine term.
+
+Since we already have an analytical expression for $A_l$, and $A_l$ differs from $\hat{A}_l$ only by a constant factor per SH level, we can derive an analytical expression for $\hat{A}_l$ too, which is exactly what Ramamoorthi does next:
 $$
 \hat{A}_l =
 \begin{cases}
