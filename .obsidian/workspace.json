@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Math/Light Transport/Spherical Harmonics.md",
+                "file": "Math/R(n) low discrepancy sequence.md",
                 "mode": "source",
                 "source": false
               }
@@ -37,14 +37,25 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Math/R(n) low discrepancy sequence.md",
+                "file": "Math/Light Transport/Spherical integrals.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "1698dbbc54a7b0d8",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Math/Light Transport/Spherical integrals.md",
                 "mode": "source",
                 "source": false
               }
             }
           }
-        ],
-        "currentTab": 2
+        ]
       }
     ],
     "direction": "vertical"
@@ -174,35 +185,35 @@
       "marp:Marp: Open Preview": false
     }
   },
-  "active": "9ee7a95c9067a0e5",
+  "active": "ee1a856594102d72",
   "lastOpenFiles": [
-    "Math/Hindley-Milner.md",
-    "Math/Light Transport/N dot L from rendering equation.md",
-    "Math/Light Transport/Spherical integrals.md",
-    "Math/Solid angle.md",
-    "Math/Monte carlo methods.md",
-    "Math/Light Transport/Cosine weighted sampling.md",
-    "Math/Light Transport/Spherical Harmonics.md",
-    "Path Tracing presentation.md",
-    "AudioLink version getters.md",
-    "Untitled",
-    "Math/Light Transport/The rendering equation.md",
-    "Math/Light Transport/Direct light sampling PDF.md",
-    "Attachments/Pasted image 20231008194242.png",
-    "Math/Sampling discrete distribution in O(1).md",
     "Shaders/World position from depth.md",
     "Shaders/VRChat proposals.md",
     "Shaders/SH to Unity shader coefficients.md",
     "Shaders/Matrix inversion.md",
     "Shaders/Anti-aliasing for 2D sdf.md",
+    "Math/Solid angle.md",
+    "Math/Sampling discrete distribution in O(1).md",
     "Math/R(n) low discrepancy sequence.md",
+    "Math/Monte carlo methods.md",
     "Math/Integration primer.md",
+    "Math/Hindley-Milner.md",
     "Math/Dirac delta for unit sphere.md",
     "Math/Constructing an orthonormal basis around a normal.md",
-    "Math/Light Transport/Perfect reflection and refraction PDF.md",
+    "Math/Light Transport/Why divide albedo by π.md",
+    "Math/Light Transport/The rendering equation.md",
+    "Math/Light Transport/Spherical integrals.md",
+    "Math/Light Transport/Spherical Harmonics.md",
     "Math/Light Transport/Ratio for diffuse and specular bounce.md",
     "Math/Light Transport/Polarized light.md",
-    "Math/Light Transport/Why divide albedo by π.md",
+    "Math/Light Transport/Perfect reflection and refraction PDF.md",
+    "Math/Light Transport/N dot L from rendering equation.md",
+    "Math/Light Transport/Direct light sampling PDF.md",
+    "Math/Light Transport/Cosine weighted sampling.md",
+    "Path Tracing presentation.md",
+    "AudioLink version getters.md",
+    "Untitled",
+    "Attachments/Pasted image 20231008194242.png",
     "Spherical.md",
     "Attachments/Pasted image 20231005233459.png",
     "Attachments/Pasted image 20231005232635.png",
