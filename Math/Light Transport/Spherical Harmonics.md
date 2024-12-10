@@ -193,9 +193,9 @@ $$
 $$
 Where $f_l^m$ are SH coefficients for $F(\omega)$ and $g_l^m$ are SH coefficients for $G(\omega)$.
 # Convolution
-One can also calculate [convolutions](https://en.wikipedia.org/wiki/Convolution) of spherical harmonics without too much effort, using the following convolution theorem:
+One can also calculate [convolutions](https://en.wikipedia.org/wiki/Convolution) of spherical harmonics without too much effort, using the following [convolution theorem](https://www.cs.jhu.edu/~misha/Spring15/17.pdf):
 $$
-(f\star g)_l^m = \sum_{l=0}^\infty\sum_{m=-l}^l \sqrt{\frac{4\pi}{2l+1}} f_l^0 g_l^m
+(f\star g)_l^m = \sqrt{\frac{4\pi}{2l+1}} f_l^0 g_l^m
 $$
  Here, $f \star g$ denotes the convolution of the spherical functions $f$ and $g$, and $(f \star g)_l^m$ is thus the coefficients of the convolution projected into the SH basis. It is important to note that this operation is **only well defined when $f$ is circularly symmetric around the Z axis**. Functions with this property, also known as azimuthal independence, will only have non-zero coefficients for the SH basis functions with index 0, ie. those in the middle column of the SH pyramid shown earlier. This column of basis functions are called the _zonal harmonics_.
 # Use in global illumination
