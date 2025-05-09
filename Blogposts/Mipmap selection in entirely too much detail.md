@@ -31,7 +31,7 @@ The typical solution to this is [mipmapping](https://en.wikipedia.org/wiki/Mipma
 ![[ezgif-31017683bfd76e.gif]]
 In cases where texture sampling would result in aliasing, because too many texels are covered by the pixel, we instead sample a lower resolution mipmap to mitigate it. That way, we get an approximate average of the texels in the covered area. Here's the same setup before, but now with mipmapping enabled:
 ![[AVNlMTV1Uq.png]]
-We didn't have to change the shader at all to achieve this - when `Texture2D.Sample` is used, and the input texture contains mipmaps, the GPU will automatically select an appropriate mipmap level for each sample!
+We didn't have to change the shader at all to achieve this - when `Texture2D.Sample()` is used, and the input texture contains mipmaps, the GPU will automatically select an appropriate mipmap level for each sample!
 
 If you are like me, you won't find this explanation very satisfying. The GPU does _some magic_ to select a mipmap level? Ok - so how does it work? That's what the rest of this post is about.
 
@@ -51,7 +51,7 @@ float4 frag (float2 uv : TEXCOORD0) : SV_Target
 
 The more shallow the viewing angle, the larger the derivatives get. Additionally, the derivatives are larger further away from the camera. ![[nZeABptci6.gif]]
 
-These conditions line up well with the cases where texture sampling would result in ugly aliasing, so it shouldn't come as a big surprise that the selection of mipmap levels has something to do with the derivatives of the input texture sampling coordinates. In fact, `Texture2D.Sample` can be seen as syntax sugar for the more general `Texture2D.SampleGrad` function:
+These conditions line up well with the cases where texture sampling would result in ugly aliasing, so it shouldn't come as a big surprise that the selection of mipmap levels has something to do with the derivatives of the input texture sampling coordinates. In fact, `Texture2D.Sample()` can be seen as syntax sugar for the more general `Texture2D.SampleGrad()` function:
 ```glsl
 // These 2 lines of code are equivalent:
 Texture2D.Sample(sampler, location);
@@ -94,10 +94,10 @@ This should be _somewhat_ intuitive - as the length of the derivatives increase,
 
 If you search around the web for how to calculate mipmap level manually, you will probably find a solution like this. However, as we will soon see, this is not the full story.
 ## What does the hardware actually do?
-As I mentioned earlier, since `Texture2D.SampleGrad` is implemented in hardware, we can't look at the implementation directly. However, we _can_ use observations of its behavior to deduce what it is doing. To facilitate this, I will first need a texture with mipmaps that are easily distinguishable from each other. Luckily, most graphics frameworks let you manually fill in the texture data for each mipmap - they don't _have_ to be blurry versions of the full-resolution texture. Since I'm using Unity for visualization, I wrote [a little script](https://gist.github.com/pema99/c706b38eb94b13a1680c8635c180b228) that produces a texture where each mipmap is a single, bright, clearly distinguishable color. The resulting texture looks like this:
+As I mentioned earlier, since `Texture2D.SampleGrad()` is implemented in hardware, we can't look at the implementation directly. However, we _can_ use observations of its behavior to deduce what it is doing. To facilitate this, I will first need a texture with mipmaps that are easily distinguishable from each other. Luckily, most graphics frameworks let you manually fill in the texture data for each mipmap - they don't _have_ to be blurry versions of the full-resolution texture. Since I'm using Unity for visualization, I wrote [a little script](https://gist.github.com/pema99/c706b38eb94b13a1680c8635c180b228) that produces a texture where each mipmap is a single, bright, clearly distinguishable color. The resulting texture looks like this:
 ![[J9MzgxLxZf.gif]]
 
-Next, I wrote a shader that samples the texture using `Texture2D.SampleGrad()`, but where the sampling location is some fixed point, and the derivatives are based on UV coordinates. `Texture2D.SampleGrad()` takes a partial derivative of the sampling location for both the X and Y axes, each of which are 2-dimensional vectors, so this is technically a 6-dimensional function. Since we are keeping the sampling location fixed, it is a 4-dimensional function in practice. Functions of over 3 dimensions are a bit tricky to visualize, so I'll focus on just the derivatives for the X axis for now, and leave the Y axis derivatives as 0:
+Next, I wrote a shader that samples the texture using `Texture2D.SampleGrad()`, but where the sampling location is a constant, and the derivatives are based on UV coordinates. `Texture2D.SampleGrad()` takes a partial derivative of the sampling location for both the X and Y axes, each of which are 2-dimensional vectors, so this is technically a 6-dimensional function. Since we are keeping the sampling location fixed, it is a 4-dimensional function in practice. Functions of over 3 dimensions are a bit tricky to visualize, so I'll focus on just the derivatives for the X axis for now, and leave the Y axis derivatives as 0:
 ```glsl
 float4 frag (float2 uv : TEXCOORD0) : SV_Target  
 {  
@@ -120,7 +120,7 @@ float4 frag (float2 uv : TEXCOORD0) : SV_Target
 ```
 Applying this shader to a quad yields on my machine (GPU is an RTX 4070 super):
 ![[Pasted image 20250508020347.png]]
-The image is scaled such that the bottom left corner corresponds to X axis derivatives of (-1, -1), and the top left corner corresponds to (1, 1). The color at each pixel indicates which mip level is being sampled.
+The image is scaled such that the bottom left corner corresponds to X axis derivatives of (-1, -1), and the top left corner corresponds to (1, 1). The color at each pixel indicates which mipmap level is being sampled when `Texture2D.SampleGrad()` is passed derivatives corresponding to the pixel coordinates.
 
 When I first saw this result, I was a bit surprised. Why are there jagged edges!? The formulas described in the previous section should result in a bunch of perfect concentric circles! As it turns out, current graphics libraries leave the specifics of the implementation up to the GPU vendor, and only prescribe some loose criteria on the implementation. Nvidia cards use a particularly crude approximation.
 
@@ -141,7 +141,7 @@ In the previous visualizations of the derivative-to-mipmap-level mapping functio
 ![[Pasted image 20250508223718.png]]
 > Note: This kind of visualization will pop up several times throughout the post, so it's worth hammering in what we are looking at: The bottom left grid cell has constant Y-derivatives (0, 0), while the top left grid cell has constant Y-derivatives (1,1), all the cells between have constant Y-derivatives somewhere between 0 and 1. Within each grid cell, the local X and Y coordinates determine the X-derivatives. I'm only visualizing positive Y-derivatives, because the images for negative derivatives are just the same, but mirrored. The color once again indicates the selected mipmap level. Of course, this image is very vendor-specific - these images were all generated on an RTX 4070 Super.
 
-With this setup, we can easily compare what the hardware does to the proposed software implementation from the [[#What does the mapping look like conceptually?]] section, using `Texture2D.SampleLevel` to explicitly sample the mipmap level we have selected. Here's the same image, but using the software implementation:
+With this setup, we can easily compare what the hardware does to the proposed software implementation from the [[#What does the mapping look like conceptually?]] section, using `Texture2D.SampleLevel()` to explicitly sample the mipmap level we have selected. Here's the same image, but using the software implementation:
 ![[WeirdMips 1.png]]
 That looks... _surprisingly_ different from the hardware implementation. As expected, the software implementation produces perfect circle patterns, while the hardware implementation approximates them. But additionally, the hardware implementation produces some kind of ellipsoid shape whenever both the X- and Y-derivatives have nonzero components, while the software implementation _only_ ever produces perfect circles. The surprised me a bit when I first saw it, since I found no mention of this behavior during my initial research. This piqued my interest and drove me to attempt to reverse engineer the behavior. It turns out I had to dig a little bit deeper to find my answer... 
 # Reverse engineering the hardware implementation
@@ -381,7 +381,7 @@ Nice - we seem to have a pretty decent match with the hardware implementation...
 
 There is one noteworthy difference, however. On my GPU, every other value for the max degree of anisotropy barely looks different from the previous one. For example, Degree=5 and Degree=6 look very similar, though there is a slight difference. Then Degree=6 and Degree=7 look completely different. In the software implementation, we don't have any such behavior. I'm not quite sure what is going on here, and it is probably extremely vendor-specific.
 ## Bonus: More visualizations
-To get a better feel for how the final software implementation of mipmap level selection compares to the hardware, I wrote a [small shader](https://gist.github.com/pema99/b0d046a30afb0ca1b2fdc3e14b6c2920) that uses the software implementation on the left half of the screen, and the hardware implementation on the right. First, it can visualize which mip levels are chosen. Here's with no filtering:
+To get a better feel for how the final software implementation of mipmap level selection compares to the hardware, I wrote a [small shader](https://gist.github.com/pema99/b0d046a30afb0ca1b2fdc3e14b6c2920) that uses the software implementation on the left half of the screen, and the hardware implementation on the right. First, it can visualize which mipmap levels are chosen. Here's with no filtering:
 ![[KTD0DUw0Ul.gif]]
 And here is with 16x anisotropic filtering:
 ![[LfHimbKHp2.gif]]
@@ -429,10 +429,3 @@ I hope that I've lived up to the title of this blog post, and that you learned a
 I initially became interested in how mipmap level selection works on GPU hardware when I was looking into writing a library for transpiling and running shaders on the CPU. There are many challenges involved in writing such a library, but one of the more annoying ones is deciphering how various hardware-implemented techniques can be done in software, based on often limited information. Mipmap level selection is one good example of this, but there are many others (think MSAA, rasterization rules, conservative rasterization, early Z, block texture compression, tessellation, etc.). This post explores just one of these rabbit holes.
 
 What pushed me to dig deeper than the first software implementation I stumbled upon was this: I find myself frustrated with the relative lack of readily available information on GPU functionality specifics. So much of what I know comes from experimenting, exchanging ideas with fellow graphics programmers, and trying to decipher obtuse morsels of information drip-fed to me by the GPU vendors, through various documentation and pseudo-specs. I wish the details were easier to find, and this post is one small contribution towards fulfilling that. I hope you enjoyed following allowing.
-# Notes
-- Proofread
-- Clarify how the mip display shader works
-- Clarify the elliptical transform - why?
-- Revisit the early description of mipmapping, use the later description
-- Clarify that diagonalization is the same as for a matrix
-- Show full code
