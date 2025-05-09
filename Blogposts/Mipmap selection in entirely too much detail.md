@@ -367,7 +367,13 @@ if (lengthMinor < 1.0)
 
 output.LOD = log2(lengthMinor);
 ```
-I've omitted some comments for brevity. The spec states that this code should run _after_ applying the elliptical transformation from earlier. This is a pseudocode implementation of (part of) the algorithm for anisotropic filtering described earlier. It produces both the ratio of anisotropy (`ratioOfAnisotropy`), the axis of anisotropy (`anisoLineDirection`), and the mipmap level (`LOD`). For this post, only the portions calculating the mipmap level are relevant. This pseudocode is straight forward to [translate into real shader code](https://gist.github.com/pema99/9a2cd933332106915a970b96ce05e286). Doing so yields the following:
+I've omitted some comments for brevity. The spec states that this code should run _after_ applying the elliptical transformation from earlier. This is a pseudocode implementation of (part of) the algorithm for anisotropic filtering described earlier. It produces both the ratio of anisotropy (`ratioOfAnisotropy`), the axis of anisotropy (`anisoLineDirection`), and the mipmap level (`LOD`).
+
+To illustrate this, I've extended my interactive ellipse diagram from earlier with an implementation of the algorithm. As the derivative vectors move around, the axis of anisotropy remains the major axis of the ellipse, and the selected mipmap level depends on the size of the minor axis. 
+![[euWcmAvPSi.gif]]
+> Note: You can play with the updated version of the diagram [here](https://www.geogebra.org/classic/uyjgqzjj).
+
+For this post, only the portions of the pseudocode from the DirectX spec relating to mipmap level calculation are relevant. This pseudocode is straight forward to [translate into real shader code](https://gist.github.com/pema99/9a2cd933332106915a970b96ce05e286). Doing so yields the following:
 ![[output 1.gif]]
 Nice - we seem to have a pretty decent match with the hardware implementation...
 
