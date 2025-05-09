@@ -69,7 +69,7 @@ Where $x, y$ are the coordinates of the pixel, and $\rho$ is a "scale factor" de
 $$
 \rho = max\Bigg\{\sqrt{\bigg(\frac{\partial u}{\partial x}\bigg)^2 + \bigg(\frac{\partial v}{\partial x}\bigg)^2},\sqrt{\bigg(\frac{\partial u}{\partial y}\bigg)^2 + \bigg(\frac{\partial v}{\partial y}\bigg)^2}\Bigg\}
 $$
-Here, $u$ and $v$ denote the coordinates of the sampling location in texture coordinate space (0 to texture width/height), so $\frac{\partial u}{\partial x}$ for example is the partial derivative of the horizontal coordinate of the sampling location with respect to the $x$, i.e. `ddx(u)`.
+Here, $u$ and $v$ denote the coordinates of the sampling location in texture space, scaled to the range $[0; TextureSize]$, so $\frac{\partial u}{\partial x}$ for example is the partial derivative of the horizontal coordinate of the sampling location with respect to the $x$, i.e. `ddx(u)`.
 
 That's a bit of a mouthful, so lets translate it to code:
 ```glsl
@@ -121,29 +121,16 @@ The image is scaled such that bottom left corner corresponds to X axis derivativ
 
 When I first saw this result, I was a bit surprised. Why are there jagged edges!? The formulas described in the previous section should result in a bunch of perfect concentric circles! As it turns out, current graphics libraries leave the specifics of the implementation up to the GPU vendor, and only prescribe some loose criteria on the implementation. Nvidia cards use a particularly crude approximation.
 
-> Sidenote: This is just one of many, many pieces of functionality that differ in implementation across different vendors. It's a pet peeve of mine when people assume that there is a "one true correct" implementation of pretty much anything in GPU-land. To name a few other areas where vendors differ: The precision of transcendentals like `cos(x)` and `sin(x)`, the implementation of AlphaToCoverage (AMD uses dithering), subtle differences in rasterizer output, especially with conservative rasterization, etc. This is unfortunately a big source of pain when doing image-based/golden-image testing for anything involving the graphics pipeline, and is one of the big reasons such test setups often have per-platform reference images, and use fuzzy comparisons.
+> Side note: This is just one of many, many pieces of functionality that differ in implementation across different vendors. It's a pet peeve of mine when people assume that there is a "one true correct" implementation of pretty much anything in GPU-land. To name a few other areas where vendors differ: The precision of transcendentals like `cos(x)` and `sin(x)`, the implementation of AlphaToCoverage (AMD uses dithering), subtle differences in rasterizer output, especially with conservative rasterization, etc. This is unfortunately a big source of pain when doing image-based/golden-image testing for anything involving the graphics pipeline, and is one of the big reasons such test setups often have per-platform reference images, and use fuzzy comparisons.
 
-My next instinct was to determine which vendors *actually* differ in their implementation, and to what extent. I asked a bunch of friends to try it on their hardware, and collected the results:
+My next instinct was to determine which vendors *actually* differ in their implementation, and to what extent. I asked a bunch of friends to try it on their hardware, and collected the results. I'm only rendering the quadrant with positive derivatives here, since the shape is symmetric anyways:
+![[Pasted image 20250509174714.png]]
 
-NVidia 30xx series, 40xx series, 50xx series:
-![[Pasted image 20250508021935.png]]
-
-AMD 7900XTX, AMD RX580, AMD 9000 series APU:
-![[Pasted image 20250508021838.png]]
-
-Unknown MacBook:
-![[Pasted image 20250508022033.png]]
-
-Intel UHD Graphics 620 iGPU:
-![[Pasted image 20250508021705.png]]
-
-Adreno 740 (Oculus Quest 3):
-![[Pasted image 20250508021750.png]]
-
-A few notes on these results:
+A few notes on my findings:
 - All tested vendors seem to *roughly* agree on the mapping function. Every image resembles a set of concentric circles with the same radius. The extent to which the circle is approximated differs quite a bit across every vendor, though.
 - No 2 vendors agree _entirely_ on the implementation.
 - All tested vendors seem to be consistent across their hardware lineup. Interestingly AMD's APUs are consistent with their dedicated GPUs.
+- The result is the same across all the graphics libraries Unity supports (I checked).
 
 And with this, I present perhaps the first-ever GPU tier list ranked in order of fidelity of derivative-to mipmap-level-mapping-function (the only important metric, clearly): Adreno/Qualcomm > AMD > Intel > MacBook/Apple > Nvidia. You heard it here first, Nvidia hardware sucks! (/s)
 ## Exploring the full 4D mapping function
@@ -259,7 +246,7 @@ float lengthY = sqrt(du_dy*du_dy + dv_dy*dv_dy);
 When the column vectors are perpendicular, this is essentially calculating the distance to the furthest point on the periphery of an ellipse whose semi-major and semi-minor axes are given by the column vectors That's exactly what we want for mipmapping - larger footprint means larger length, and thus higher mip level. However, when the column vectors are not perpendicular, the shearing breaks this distance metric. We need to manually correct for this, by calculating the distance in a difference coordinate system. To do this, we need to _diagonalize_ the ellipse.
 
 Diagonalizing an ellipse means to find a coordinate system in which the ellipse is aligned with the axes. In particular, the major and minor axes should be aligned with X and Y axis of the coordinate system. This eliminates the shearing, and allows the distance metric to work properly. The next few paragraphs of the DirectX 11 spec describe an algorithm for performing this diagonalization, taken from [Heckbert 89](https://www2.eecs.berkeley.edu/Pubs/TechRpts/1989/CSD-89-516.pdf). The details of this algorithm are not so important, so I won't describe them. Instead, to build intuition, I have implemented the algorithm in a graphic calculator, which lets us clearly see what is going:
-![[Pasted image 20250509030120.png]]
+![[Pasted image 20250509173124.png]]
 > Note: You can play with this an interactive demo [here](https://www.geogebra.org/classic/msau3zqx).
 
 The image shows an example of the ellipse corresponding to a case where the X- and Y-axis (labelled $d_x$, $d_y$) derivatives are not perpendicular, resulting in a transformation with shearing. The outputs of the algorithm (labelled $n_x$, $n_y$) are set of new basis vectors describing the transformation to a coordinate space in which the ellipse is axis-aligned. In other words, these new basis vectors are the column vectors of our "proper orthogonal Jacobian matrix".
@@ -274,8 +261,8 @@ This visualization also shows why the DirectX spec provides a bunch of corner ca
 
 If either derivative is zero length, the coordinate would be flattened to a line.
 ![[Pasted image 20250509030612.png]]
-If the derivatives are parallel, the coordinate system is flattened to a point.
-![[Pasted image 20250509030806.png]]
+The same happens if the derivatives are parallel:
+![[Pasted image 20250509175305.png]]
 If the derivatives are perpendicular, there is no shearing, so performing the diagonalization is a waste of effort. Other than that, the final 2 points about inf and NaN are pretty self explanatory.
 
 With the elliptical transformation under our belt, let's try adding it to our software implementation of mipmap level selection from earlier:
@@ -312,10 +299,89 @@ void EllipsoidTransformDerivatives(inout float2 dx, inout float2 dy)
 Rendering out the same visualization we used before:
 ![[WeirdMips 4.png]]
 This looks a lot more similar to what the hardware implementation was doing!
-## Bilinear and trilinear filtering
+## Trilinear filtering
+All the visualizations I've made thus far has been without any kind of hardware texture filtering, and just use simple [nearest-neighbor interpolation](https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation). Enabling [bilinear filtering](https://learn.microsoft.com/en-us/windows/uwp/graphics-concepts/bilinear-texture-filtering) makes no difference, as it doesn't affect how the mipmap level is used. Enable trilinear filtering, however, does make a difference. Rendered with the correct software implementation:
+![[WeirdMips 7.png]]
+And with hardware mipmap level selection:
+![[WeirdMips 8.png]]
+Trilinear filtering is just like bilinear filtering, but where we additionally interpolate between 2 mipmap levels. Without trilinear filtering, the selected mipmap level is just rounded to the nearest integer, and only one mipmap is sampled. With trilinear filtering, the floor and ceiling of the mipmap level is calculated, then the 2 corresponding mipmaps are sampled, and the results are linearly interpolated using the fractional part of the mipmap level. This is why we've been calculating it is a `float` all along.
+
+With that, harsh transitions between mipmap levels from the previous images are changed to smooth gradients. This is not very surprising, but I wanted to show that the software implementation continues to hold up when using trilinear filtering.
 ## Anisotropic filtering
+In addition to bilinear and trilinear filtering, most GPUs also support [anisotropic filtering](https://en.wikipedia.org/wiki/Anisotropic_filtering). Anisotropic filtering aims to alleviate one of main issues with mipmapping. Mipmapping reduces aliasing from texture samples, but also introducing blurring, especially at shallow viewing angles. Anisotropic filtering effectively removes the blur by taking multiple more texture samples of a higher resolution mipmap when the footprint of a pixel is stretched:
+![[Pasted image 20250509181704.png]]
+The typical algorithm for anisotropic filtering works like this:
+1. Determine the elliptical footprint of the screen pixel using the X- and Y-axis derivatives of the sampling location in texture space.
+2. Determine the semi-major and semi-minor axes of the ellipse. The semi-major (longer) axis is called the "axis of anisotropy".
+3. Calculate the ratio of the lengths of the semi-major and semi-minor axes. This is called the "degree of anisotropy".
+4. Clamp the degree of anisotropy to the maximum degree of anisotropy - this is typically a setting on the texture, with possible values ranging from 0 to 16.
+5. Calculate $log_2(semiMinorAxisLength)$. This is the mipmap level to sample.
+6. Distribute sample points along the axis of anisotropy. The amount of sample points depends on the clamped degree of anisotropy.
+7. Sample the texture at each of the sample points and average their values.
+Notice that, unlike with regular mipmapping, where we use the length of the semi-major axis to select the mipmap level, we now use the length of the _semi-minor_ axis. This is what mitigates the blurring caused by mipmapping - we sample a higher resolution texture when the pixels footprint is anisotropic (stretched). That _alone_ would just reintroduce aliasing, so to mitigate this, we take more samples along the axis where they are needed most, effectively mitigating the added aliasing by supersampling, rather than blurring.
+
+So, how does enabling anisotropic filtering change the visualization of mipmap level selection from before? To visualize this, I've upgraded our previous visualization to an animation. Since anisotropic filtering is parameterized by a maximum degree of anisotropy setting, the visualization is now an animation. Each maximum degree produces a different image:
+![[output.gif]]
+When the degree of anisotropy exceeds 0, the image no longer matches what our software implementation produced. This makes sense - anisotropic filtering affects mipmap level selection, but our implementation isn't accounting for it.
+
+Returning to the DirectX 11 spec, recall that the paragraph about the elliptical transform read: "\[...\] it is important to calculate LOD using a proper orthogonal Jacobian matrix, as described by [Heckbert 89]. **When performing anisotropic filtering, it is also important to use these modified vectors to calculate the proper filtering footprint.**". I skipped over this part earlier, but it is exactly what we are missing. The spec further elaborates: "if(ComputeAnisotropicLOD), the LOD calculation is:"
+```glsl
+// Compute outputs:
+// (1) float ratioOfAnisotropy
+// (2) float anisoLineDirection
+// (3) float LOD
+
+float squaredLengthX = dX.u*dX.u + dX.v*dX.v
+float squaredLengthY = dY.u*dY.u + dY.v*dY.v
+float determinant = abs(dX.u*dY.v - dX.v*dY.u)
+bool isMajorX = squaredLengthX > squaredLengthY
+float squaredLengthMajor = isMajorX ? squaredLengthX : squaredLengthY
+float lengthMajor = sqrt(squaredLengthMajor)
+float normMajor = 1.f/lengthMajor
+
+output.anisoLineDirection.u = (isMajorX ? dX.u : dY.u) * normMajor
+output.anisoLineDirection.v = (isMajorX ? dX.v : dY.v) * normMajor
+
+output.ratioOfAnisotropy = squaredLengthMajor/determinant
+
+// clamp ratio and compute LOD
+float lengthMinor
+// maxAniso comes from a Sampler state.
+if (output.ratioOfAnisotropy > input.maxAniso)
+{
+    // ratio is clamped - LOD is based on ratio (preserves area)
+    output.ratioOfAnisotropy = input.maxAniso
+    lengthMinor = lengthMajor/output.ratioOfAnisotropy
+}
+else
+{
+    // ratio not clamped - LOD is based on area
+    lengthMinor = determinant/lengthMajor
+}
+
+// clamp to top LOD
+if (lengthMinor < 1.0)
+{
+    output.ratioOfAnisotropy = MAX(1.0, output.ratioOfAnisotropy*lengthMinor)
+}
+
+output.LOD = log2(lengthMinor);
+```
+I've omitted some comments for brevity. The spec states that this code should run _after_ applying the elliptical transformation from earlier. This is a pseudocode implementation of (part of) the algorithm for anisotropic filtering described earlier. It produces both the ratio of anisotropy (`ratioOfAnisotropy`), the axis of anisotropy (`anisoLineDirection`), and the mipmap level (`LOD`). For this post, only the portions calculating the mipmap level are relevant. This pseudocode is straight forward to [translate into real shader code](https://gist.github.com/pema99/9a2cd933332106915a970b96ce05e286). Doing so yields the following:
+![[output 1.gif]]
+Nice - we seem to have a pretty decent match with the hardware implementation...
+
+There is one noteworthy difference, however. On my GPU, every other value for the max degree of anisotropy barely looks different from the previous one. For example, Degree=5 and Degree=6 look very similar, though there is a slight difference. Then Degree=6 and Degree=7 look completely different. In the software implementation, we don't have any such behavior. I'm not quite sure what is going on here, and it is probably extremely vendor specific.
+## Bonus: More visualizations
+In order to get a better feel for how the final software implementation of mipmap level selection compares to the hardware, I wrote a [small shader](https://gist.github.com/pema99/b0d046a30afb0ca1b2fdc3e14b6c2920) that uses the software implementation on the left half of the screen, and the hardware implementation on the right. First, it can visualize which mip levels are chosen. Here's with no filtering:
+![[KTD0DUw0Ul.gif]]
+And here is with 16x anisotropic filtering:
+![[LfHimbKHp2.gif]]
+Looks pretty good to me! Finally, we can visualize the actual effect of using these implementations on a typical textured surface:
+![[0ckD7DNPGC.gif]]
+The halfs are barely distinguishable to me! This is without anistropic filtering, though. Unfortunately, we can't visualize the difference with anisotropic filtering, as there is no way to manually specify the axis and ratio of anisotropy in shader code.
 ## Bonus: Nvidia's approximation
-I noted earlier that Nvidia uses a particularly crude approximation for their mipmap level selection. I can only assume they do this for performance reasons. I found their approximation quite intriguing, so made an attempt to reverse engineer it. I believe they are doing something _similar_ to this:
+I noted in the section [[#What does the hardware actually do?]] that Nvidia uses a particularly crude approximation for their mipmap level selection. I can only assume they do this for performance reasons. I found their approximation quite intriguing, so made an attempt to reverse engineer it. I believe they are doing something _similar_ to this:
 ```glsl
 // Scale input derivatives to texture size  
 dx *= float2(width0, height0); 
@@ -349,6 +415,17 @@ And in particular, has no square roots or exponentiations. Rendered out:
 ![[WeirdMips 5.png]]
 It doesn't quite match the hardware implementation.. but it's pretty close. Close enough that I think I am on to something. If you think you have a better idea - let me know! For completeness, here is the diff between the hardware and my attempt rendered out:
 ![[WeirdMips 6.png]]
-# Why do you care
-- Emulation
-- Curiosity
+# Closing words
+I hope that I've lived up to the title of this blog post, and that you learned a thing or two. I certainly did while researching this. Before we finish, I'd like to briefly touch on my motivation for writing this - it is two fold:
+
+I initially became interested in how mipmap level selection works on GPU hardware when I was looking into writing a library for transpiling and running shaders on the CPU. There are many challenges involved in writing such a library, but one of the more annoying ones is deciphering how various hardware-implemented techniques can be done in software, based on often limited information. Mipmap level selection is one good example of this, but there are many others (think MSAA, rasterization rules, conservative rasterization, early Z, block texture compression, tessellation, etc.). This post explores just one these rabbit holes.
+
+What pushed me to dig deeper than the first software implementation I stumbled upon was this: I find myself frustrated with the relative lack of readily available information on GPU functionality specifics. So much of what I know comes from experimenting, exchanging ideas with fellow graphics programmers, and trying to decipher obtuse morsels of information drip-fed to me be the GPU vendors, through various documentation and pseudo-specs. I wish the details were easier to find, and this post is one small contribution towards fulfilling that. I hope you enjoyed following allowing.
+# Notes
+- Proofread
+- Clarify how the mip display shader works
+- Clarify the elliptical transform - why?
+- Revisit early description of mipmapping, use later description
+- Clarify that diagonalization is the same as for a matrix
+- Show full code
+- https://www.geogebra.org/classic/uyjgqzjj
