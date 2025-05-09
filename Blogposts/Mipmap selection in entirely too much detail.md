@@ -10,7 +10,7 @@ float4 Texture2D.Sample(SamplerState sampler, float2 location);
 ```
 It takes as input a location to sample the texture at, and a `SamplerState`, which is an object containing metadata used to influence the sampling, like which [texture filtering](https://en.wikipedia.org/wiki/Texture_filtering) mode should be used.
 
-Here is an example of a simple fragment/pixel shader which shades each pixel using the result of sampling a texture `_Texture` using the UV coordinates in the 0th channel:
+Here is an example of a simple fragment shader which shades each pixel by sampling a texture `_Texture` using the texture coordinates in the 0th UV channel:
 ```glsl
 float4 frag (float2 uv : TEXCOORD0) : SV_Target  
 {  
@@ -21,12 +21,15 @@ float4 frag (float2 uv : TEXCOORD0) : SV_Target
 When applied to a quad and fed a brick texture as input, we get this:
 ![[Unity_HTfdhuIUKO.png]]
 
-Notice that the image looks rather 'grainy', especially near the far edge. This is texture [aliasing](https://en.wikipedia.org/wiki/Aliasing). The more shallow the viewing angle, the further apart the [texels](https://en.wikipedia.org/wiki/Texel_(graphics)) sampled in the texture for neighboring screen pixels can be.
-<!--![[Pasted image 20250508002744.png]]-->
+Notice that the surface looks rather 'pixelated', especially near the far edge. This is called texture [aliasing](https://en.wikipedia.org/wiki/Aliasing). The root cause is that the size of the region in texture space covered by a screen pixel varies with distance and viewing angle. 
+![[Pasted image 20250509010904.png]]
+>Consider for illustration the tilted quadrilateral. Observe how the same area in screen space can correspond to very different areas in texture space. The blue square covers roughly 4 pixels, while the green one covers roughly 12, even though they have the same area in screen space.
 
-The typical solution to this is [mipmapping](https://en.wikipedia.org/wiki/Mipmap) - we first generate a bunch of smaller versions of our texture, called mipmaps, by averaging texels from the higher resolution texture. As the mipmaps get smaller, their contents get more blurry. We are effectively applying a series of [low-pass filters](https://en.wikipedia.org/wiki/Low-pass_filter). We typically name the mipmaps using numbers, where 0 is the full resolution texture, and each subsequent number corresponds to a lower resolution texture. I'll call these numbers 'mipmap levels'.
+The more shallow the viewing angle, the more [texels](https://en.wikipedia.org/wiki/Texel_(graphics)) are covered by each pixel on the screen. Since we only sample 1 texel for every screen pixel, most of the texels covered by the screen pixel are *aliased* into a single sample - the contribution from the covered texels that were not sampled is lost!
+
+The typical solution to this is [mipmapping](https://en.wikipedia.org/wiki/Mipmap) - we first generate a bunch of smaller versions of our texture, called *mipmaps*, by averaging texels from the higher resolution texture. As the mipmaps get smaller, their contents get more blurry. We are effectively applying a series of [low-pass filters](https://en.wikipedia.org/wiki/Low-pass_filter) to the texture. We typically name the mipmaps using numbers, where 0 is the full resolution texture, and each subsequent number corresponds to a lower resolution texture. I'll call these numbers 'mipmap levels'.
 ![[ezgif-31017683bfd76e.gif]]
-In cases where texture sampling would likely result in aliasing, such as at when the texture is viewed at shallow angles, we sampling a lower resolution mipmap to mitigate it. Here's the same setup before, but now with mipmapping enabled:
+In cases where texture sampling would result in aliasing, because too many texels are covered by the pixel, we instead sample a lower resolution mipmap to mitigate it. That way, we get an approximate average of the texels in the covered area. Here's the same setup before, but now with mipmapping enabled:
 ![[AVNlMTV1Uq.png]]
 We didn't actually have to change the shader at all to achieve this - when `Texture2D.Sample` is used, and the input texture contains mipmaps, the GPU will automatically select an appropriate mipmap level for each sample!
 
@@ -87,9 +90,9 @@ float MipLevel(float u, float v, float textureWidth, float textureHeight)
 	return log2(rho);
 }
 ```
-This should be _somewhat_ intuitive - as the length of the derivatives increase, so should the mipmap level. We only really care about the worst case - the axis with largest magnitude - hence the `max()`. The `log2()` accounts for the fact that each increment in mipmap level corresponds to sampling a texture that is half the size.
+This should be _somewhat_ intuitive - as the length of the derivatives increase, so should the mipmap level. We only really care about the axis where the aliasing will be worst - the axis with largest magnitude - hence the `max()`. The `log2()` accounts for the fact that each increment in mipmap level corresponds to sampling a texture that is half the size.
 
-If you search around the web for how to calculate mipmap level manually, you would probably find a solution like this. However, as we will soon see, this is not the full story.
+If you search around the web for how to calculate mipmap level manually, you will probably find a solution like this. However, as we will soon see, this is not the full story.
 ## What does the hardware actually do?
 As I mentioned earlier, since `Texture2D.SampleGrad` is implemented in hardware, we can't look at the implementation directly. However, we _can_ use observations of its behavior to deduct what it is doing. To facilitate this, I will first need a texture with mipmaps that are clearly distinguishable from each other. Luckily, most graphics frameworks let you manually fill in the texture data for each mipmap - they don't _have_ to be blurry versions of the full-resolution texture. Since I'm using Unity for visualization, I wrote [a little script](https://gist.github.com/pema99/c706b38eb94b13a1680c8635c180b228) that produces a texture where each mipmap is a single, bright, clearly distinguishable color. The resulting texture looks like this:
 ![[J9MzgxLxZf.gif]]
@@ -182,15 +185,11 @@ output.LOD = log2(max(lengthX,lengthY))
 Phew, that's a bit of a mouthful... In the snippets from the spec, `dX` and `dY` represent the X- and Y-axis derivatives we've discussed previously. The `w` component of these vectors is only used for 3D- and cubemap textures, so isn't relevant here. Notice that the code in the very last snippet looks almost exactly like the software implementation we tested earlier. However, most of the text below that snippet is describing some kind of 'elliptical' transformation that should be applied to the derivatives before we calculate their lengths. This sounds quite promising, so let's try to grok what the spec is actually prescribing.
 ## Missing elliptical transformation
 ### Side quest: Texture filtering theory and vector calculus
-Before we can describe the transformation that the DirectX 11 spec mentions, we need to visit a few ideas from the theory of texture filtering, and from vector calculus. If you are already familiar with change of basis transformations, jacobian matrices and the concept of pixel footprint, you can probably skip to the next section [[#Understanding the elliptical transformation]].
+Before we can describe the transformation that the DirectX 11 spec mentions, we need to visit a few ideas from the theory of texture filtering, and from vector calculus. If you are already familiar with jacobians and the concept of pixel footprint, you can probably skip to the next section [[#Understanding the elliptical transformation]].
 
-A naïve approach to rendering a texture surface is this: For each screen pixel, determine the corresponding point on the surface, find its corresponding point in texture space, then read the value of the texture at this point (without any filtering). As we've established earlier, this approach causes aliasing. The root cause is that the size of the region in texture space covered by a screen pixel varies with distance and viewing angle. 
-![[Pasted image 20250509010904.png]]
->Consider for illustration a tilted quad. Observe how the same area in screen space can correspond to very different areas in texture space. The blue square covers roughly 4 pixels, while the green one covers roughly 12, even though they have the same area in screen space.
+A naïve approach to rendering a texture surface is this: For each screen pixel, determine the corresponding point on the surface, find its corresponding point in texture space, then read the value of the texture at this point (without any filtering). As we've established earlier, this approach causes aliasing; when a screen pixel covers too many texels, and only texel is sampled, the contribution from most of the covered texels is lost. A better approach would be to _integrate_ over the area covered by each screen pixel, gathering contribution from all the covered texels. Mipmapping is a cheap way to approximate this integral using precomputed tables.
 
-When a screen pixel covers too many pixels in texture space, the contributions from all texels in that area are _aliased_ into a single texture sample, so their contribution is lost! A better approach would be to _integrate_ over the area covered by each screen pixel, gathering contribution from all the covered texels. Mipmapping is essentially a cheap way to approximate this integral using precomputed tables.
-
-More formally, we ideally want to integrate over the projection of the screen pixel onto the texture. This projection is called the "footprint" of the pixel. To do this, we want to know how a unit area in screen space (a pixel) is transformed when projecting into texture space. The typical mathematical tool for describing changes in area due to space transformations, such as projection, is called the "[jacobian matrix](https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant)" or just the "jacobian". When applied to a point, the jacobian is the best linear approximation of the transformation at that point. Its determinant describes how much space is 'stretched' at that point. The jacobian is constructed from first order partial derivatives of coordinates in the input space with respect to coordinates in the output space. In our case, the input space is screen space, and the output space is texture space. The jacobian looks like this:
+Ideally, we'd like to integrate over the projection of the screen pixel onto the texture. This projection is called the "footprint" of the pixel. To do this, we want to know how a unit area in screen space (i.e. a pixel) is transformed when projecting into texture space. The typical mathematical tool for describing changes in area due to mappings between spaces, such as projection, is called "the [jacobian matrix](https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant)" or just "the jacobian". When used to transform a point, the jacobian of the mapping provides the best linear approximation of the mapping at that point. When the jacobian is a square matrix, its [determinant](https://en.wikipedia.org/wiki/Determinant) describes how much space is 'stretched' at that point. The jacobian is constructed from first order partial derivatives of coordinates in the input space with respect to coordinates in the output space. In our case, the input space is screen space, and the output space is texture space. The jacobian looks like this:
 $$
 \Huge
 \begin{bmatrix}
@@ -198,16 +197,16 @@ $$
 \frac{\partial v}{\partial x} & \frac{\partial v}{\partial y}
 \end{bmatrix}
 $$
-Where $(u, v)$ are coordinates in texture space, and $(x, y)$ are coordinates in screen space. If you've paid attention so far, this might ring a few bells - these partial derivatives can be calculated in HLSL using `ddx(u)`, `ddy(u)`, `ddx(v)`, `ddy(v)`. In other words, we can view the derivatives passed to `Texture2D.SampleGrad()` as forming a jacobian which describes the projective transformation involves in rendering the textured surface.
+Where $(u, v)$ are coordinates in texture space, and $(x, y)$ are coordinates in screen space. If you've paid attention so far, this might ring a few bells - these partial derivatives can be calculated in HLSL using `ddx()` and `ddy()`. In other words, we can view the derivatives passed to `Texture2D.SampleGrad()` as forming a jacobian which describes the projective mapping involved in rendering the textured surface.
 
-In reality, it is impractical to integrate over the *actual* footprint of a screen pixel, as it will in general be a [curvilinear](https://en.wikipedia.org/wiki/Curvilinear_coordinates) quadrilateral (a quadrilateral with curved edges) - quite an unpleasant shape. Therefore, most approaches to texture filtering approximate it as either a regular quadrilateral or an ellipse, as illustrated on the figure below ([Image source](https://resources.mpi-inf.mpg.de/departments/d4/teaching/ws200708/cg/slides/CG09-Textures+Filtering.pdf)).
+In reality, it is impractical to integrate over the *actual* footprint of a screen pixel, as it will in general be a [curvilinear](https://en.wikipedia.org/wiki/Curvilinear_coordinates) quadrilateral (a quadrilateral with curved edges) - quite an unpleasant shape. Therefore, most approaches approximate it as either a regular quadrilateral or an ellipse, as illustrated on the figure below ([Image source](https://resources.mpi-inf.mpg.de/departments/d4/teaching/ws200708/cg/slides/CG09-Textures+Filtering.pdf)).
 ![[Pasted image 20250509015001.png]]
-When using mipmapping, we area mostly interested in the _size_ of the footprint. The larger the area, the larger mipmap level we need to use, as higher mipmap level correspond to approximate integrals over larger regions of the texture.
+When using mipmapping, we area mostly interested in the _size_ of the footprint. The larger the area, the larger mipmap level we need to use, as higher mipmap levels correspond to approximations of integrals over larger regions of the texture.
 ### Understanding the elliptical transformation
 With these concepts in mind, let us dissect the elliptical transformation described in the DirectX 11 spec. The first paragraph reads:
 > "Given a pair of partial derivative vectors **representing an elliptical transform**, it is important to calculate LOD using a **proper orthogonal Jacobian matrix**, as described by [Heckbert 89](https://www2.eecs.berkeley.edu/Pubs/TechRpts/1989/CSD-89-516.pdf)."
 
-I've highlighted the 2 important concepts with bold text. We have the partial derivatives of our texture sampling coordinates - but in what sense do these represent an elliptical transform. Well, imagine we have a unit circle described by an angle $\theta$ , such that $s(\theta)$ gives all the points on the periphery of the unit circle:
+I've highlighted the 2 important concepts with bold text. We have the partial derivatives of our texture sampling coordinates - but in what sense do these represent an elliptical transform? Imagine representing each screen pixel with a unit circle described by an angle $\theta$, such that $s(\theta)$ returns all the points on the perimeter of the unit circle:
 $$
 \Huge s(\theta)=
 \begin{bmatrix}
@@ -215,7 +214,7 @@ cos(\theta) \\
 sin(\theta)
 \end{bmatrix}
 $$
-And we additionally construct the jacobian matrix described in the previous section:
+If we additionally construct the jacobian described in the previous section:
 $$
 \Huge
 \begin{bmatrix}
@@ -223,7 +222,7 @@ $$
 \frac{\partial v}{\partial x} & \frac{\partial v}{\partial y}
 \end{bmatrix}
 $$
-If we transform the unit circle with this matrix:
+... And transform the unit circle with the jacobian via matrix multiplication:
 $$
 \Huge
 p(\theta) =
@@ -236,20 +235,23 @@ cos(\theta) \\
 sin(\theta)
 \end{bmatrix}
 $$
-The result function $p(\theta)$ will describe _an ellipse_. In the special case where the 2 column vectors of the jacobian (i.e. the X- and Y-axis derivatives) are perpendicular and have the same length, the result is still just a (potentially scaled) circle. When the column vectors are perpendicular, but have different length, the result is an ellipse where the column vectors are the [semi-major and semi-minor axes](https://en.wikipedia.org/wiki/Semi-major_and_semi-minor_axes) of the ellipse. If vectors are not perpendicular, this doesn't apply. 
+The resulting function $p(\theta)$ will describe _an ellipse_, where the 2 column vectors of the jacobian (i.e. the X- and Y-axis derivatives) are on the perimeter of the ellipse. In the special case where the column vectors are perpendicular and have the same length, the result is still just a (potentially scaled) circle. When the column vectors are perpendicular, but have different length, the result is an ellipse where the column vectors are the [semi-major and semi-minor axes](https://en.wikipedia.org/wiki/Semi-major_and_semi-minor_axes) of the ellipse. If vectors are not perpendicular, this doesn't apply. 
 
-That explains the first part of the paragraph, so what is the "proper orthogonal Jacobian matrix" about? When the column vectors of the jacobian are not perpendicular, the jacobian does not form an orthogonal basis - shapes will sheared transformed using it. Recall that calculation of mipmap level involves involves calculating 2 lengths - in our software implementation from earlier, this was done like so:
+That explains the first part of the paragraph, so what is the "proper orthogonal Jacobian matrix" about? When the column vectors of the jacobian are not perpendicular, the jacobian does not form an orthogonal basis - shapes transformed by the jacobian will be [sheared](https://en.wikipedia.org/wiki/Shear_mapping). Recall that calculation of mipmap level involves involves calculating 2 lengths - in our software implementation from earlier, this was done like so:
 ```glsl
 float lengthX = sqrt(du_dx*du_dx + dv_dx*dv_dx);
 float lengthY = sqrt(du_dy*du_dy + dv_dy*dv_dy);
 ```
-When the column vectors are perpendicular, this is essentially calculating the distance to the furthest point on the periphery of an ellipse whose semi-major and semi-minor axes are given by the column vectors That's exactly what we want for mipmapping - larger footprint means larger length, and thus higher mip level. However, when the column vectors are not perpendicular, the shearing breaks this distance metric. We need to manually correct for this, by calculating the distance in a difference coordinate system. To do this, we need to _diagonalize_ the ellipse.
+When the column vectors of the jacobian are perpendicular, this code calculates the distance to the furthest point on the perimeter of an ellipse whose semi-major and semi-minor axes are given by the column vectors. You can think of this as measuring how 'stretched' the ellipse is, along whichever axis is most stretched. That's exactly what we want for mipmapping - the more stretched the elliptical foot print, the more aliasing we will have, and the higher mipmap level we need. However, when the column vectors are not perpendicular, the shearing breaks this stretch metric. We need to manually correct for this, by calculating the metric in a difference coordinate system. To do this, we need to _diagonalize_ the ellipse.
 
-Diagonalizing an ellipse means to find a coordinate system in which the ellipse is aligned with the axes. In particular, the major and minor axes should be aligned with X and Y axis of the coordinate system. This eliminates the shearing, and allows the distance metric to work properly. The next few paragraphs of the DirectX 11 spec describe an algorithm for performing this diagonalization, taken from [Heckbert 89](https://www2.eecs.berkeley.edu/Pubs/TechRpts/1989/CSD-89-516.pdf). The details of this algorithm are not so important, so I won't describe them. Instead, to build intuition, I have implemented the algorithm in a graphic calculator, which lets us clearly see what is going:
+Diagonalizing an ellipse means to find a coordinate system in which the ellipse is aligned with the axes. In particular, the major and minor axes should be aligned with X and Y axis of the coordinate system. This eliminates the shearing, and allows us to calculate the stretch metric properly. 
+> Note: For the curious reader, this 'diagonalization' is closely related to [matrix diagonalization](https://en.wikipedia.org/wiki/Diagonalizable_matrix#Diagonalization), which decomposes a matrix into its [eigenvectors and eigenvalues](https://en.wikipedia.org/wiki/Eigenvalues_and_eigenvectors). In fact, ellipses can be represented as a 2x2 matrix whose eigenvectors give the direction of the major and minor semi-axes, and whose eigenvalues are related to the length of the axes.
+
+The next few paragraphs of the DirectX 11 spec describe an algorithm for performing this diagonalization, taken from [Heckbert 89](https://www2.eecs.berkeley.edu/Pubs/TechRpts/1989/CSD-89-516.pdf). The details of this algorithm are not so important, so I won't describe them. Instead, to build intuition, I have implemented the algorithm in a graphing calculator, which lets us clearly see what is going:
 ![[Pasted image 20250509173124.png]]
 > Note: You can play with this an interactive demo [here](https://www.geogebra.org/classic/msau3zqx).
 
-The image shows an example of the ellipse corresponding to a case where the X- and Y-axis (labelled $d_x$, $d_y$) derivatives are not perpendicular, resulting in a transformation with shearing. The outputs of the algorithm (labelled $n_x$, $n_y$) are set of new basis vectors describing the transformation to a coordinate space in which the ellipse is axis-aligned. In other words, these new basis vectors are the column vectors of our "proper orthogonal Jacobian matrix".
+The image shows an elliptical footprint corresponding to a case where the X- and Y-axis derivatives (labelled $d_x$, $d_y$) are not perpendicular. Notice how their length no longer describes the stretch of the ellipse. The outputs of the algorithm (labelled $n_x$, $n_y$) are set of new basis vectors describing the transformation to a coordinate space in which the ellipse is axis-aligned. These new basis vectors are the column vectors of our "proper orthogonal Jacobian matrix". This new jacobian describes almost the same mapping as the original one, and would produce the exact same ellipse as the original when used to transform the unit circle. The only difference is the rotation of the basis vectors.
 
 This visualization also shows why the DirectX spec provides a bunch of corner cases where the diagonalization should not be applied:
 >The following caveats also apply:
@@ -384,7 +386,7 @@ In order to get a better feel for how the final software implementation of mipma
 And here is with 16x anisotropic filtering:
 ![[LfHimbKHp2.gif]]
 Looks pretty good to me! Finally, we can visualize the actual effect of using these implementations on a typical textured surface:
-![[0ckD7DNPGC.gif]]
+![[7v9yUxSrbZ (1).gif]]
 The halfs are barely distinguishable to me! This is without anistropic filtering, though. Unfortunately, we can't visualize the difference with anisotropic filtering, as there is no way to manually specify the axis and ratio of anisotropy in shader code.
 ## Bonus: Nvidia's approximation
 I noted in the section [[#What does the hardware actually do?]] that Nvidia uses a particularly crude approximation for their mipmap level selection. I can only assume they do this for performance reasons. I found their approximation quite intriguing, so made an attempt to reverse engineer it. I believe they are doing something _similar_ to this:
@@ -434,4 +436,3 @@ What pushed me to dig deeper than the first software implementation I stumbled u
 - Revisit early description of mipmapping, use later description
 - Clarify that diagonalization is the same as for a matrix
 - Show full code
-- https://www.geogebra.org/classic/uyjgqzjj
