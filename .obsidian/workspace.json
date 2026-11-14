@@ -8,34 +8,6 @@
         "type": "tabs",
         "children": [
           {
-            "id": "ee1a856594102d72",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Math/R(n) low discrepancy sequence.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "R(n) low discrepancy sequence"
-            }
-          },
-          {
-            "id": "c6725e60a3eeaa78",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Blogposts/A machine to measure materials.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "A machine to measure materials"
-            }
-          },
-          {
             "id": "a870219de16dad62",
             "type": "leaf",
             "state": {
@@ -48,51 +20,8 @@
               "icon": "lucide-file",
               "title": "A machine to measure materials"
             }
-          },
-          {
-            "id": "1150120689285aad",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Path Tracing presentation.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Path Tracing presentation"
-            }
-          },
-          {
-            "id": "9ee7a95c9067a0e5",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Math/Light Transport/Spherical integrals.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Spherical integrals"
-            }
-          },
-          {
-            "id": "1698dbbc54a7b0d8",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Math/Light Transport/Spherical integrals.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Spherical integrals"
-            }
           }
-        ],
-        "currentTab": 2
+        ]
       }
     ],
     "direction": "vertical"
@@ -227,12 +156,12 @@
               "title": "Outline"
             }
           }
-        ]
+        ],
+        "currentTab": 3
       }
     ],
     "direction": "horizontal",
-    "width": 200,
-    "collapsed": true
+    "width": 313.076904296875
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -249,21 +178,23 @@
   },
   "active": "a870219de16dad62",
   "lastOpenFiles": [
+    "Attachments/Pasted image 20261114234524.png",
+    "Blogposts/Mipmap selection in entirely too much detail.md",
+    "Blogposts/A machine to measure materials.md",
+    "Attachments/Pasted image 20261114212128.png",
+    "Attachments/Pasted image 20261114194033.png",
+    "Attachments/Pasted image 20261114193404.png",
+    "Attachments/Pasted image 20261114192730.png",
+    "Attachments/Pasted image 20261114190949.png",
+    "Attachments/Pasted image 20261114190917.png",
+    "Attachments/Pasted image 20261114190409.png",
+    "Attachments/Pasted image 20261114184057.png",
+    "Math/Light Transport/Spherical integrals.md",
+    "Path Tracing presentation.md",
     "Attachments/Pasted image 20261112030315.png",
     "Attachments/VID20261010221130_cropped.mp4",
     "Attachments/Pasted image 20261112025354.png",
-    "Attachments/Pasted image 20261112025152.png",
-    "Attachments/Pasted image 20261112025041.png",
-    "Attachments/Pasted image 20261112024827.png",
-    "Attachments/Pasted image 20261112024505.png",
-    "Attachments/Pasted image 20261112023641.png",
-    "Attachments/Pasted image 20261112023244.png",
-    "Attachments/Pasted image 20261112023223.png",
     "Attachments/2026-10-02 21-04-11 - Trim (2) - Trim - Muted.mp4",
-    "Attachments/Pasted image 20261112020952.png",
-    "Attachments/Pasted image 20261112020229.png",
-    "Path Tracing presentation.md",
-    "Blogposts/A machine to measure materials.md",
     "Attachments/VID20261010221130.mp4",
     "Attachments/VID20261010204618.mp4",
     "Attachments/VID20261010204642.mp4",
@@ -286,14 +217,12 @@
     "Math/Constructing an orthonormal basis around a normal.md",
     "Math/Light Transport/Why divide albedo by π.md",
     "Math/Light Transport/The rendering equation.md",
-    "Math/Light Transport/Spherical integrals.md",
     "Math/Light Transport/Spherical Harmonics.md",
     "Math/Light Transport/Ratio for diffuse and specular bounce.md",
     "Math/Light Transport/Polarized light.md",
     "Math/Light Transport/Perfect reflection and refraction PDF.md",
     "Math/Light Transport/N dot L from rendering equation.md",
     "Math/Light Transport/Direct light sampling PDF.md",
-    "Math/Light Transport/Cosine weighted sampling.md",
     "Untitled"
   ]
 }
