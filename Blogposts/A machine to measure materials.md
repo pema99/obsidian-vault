@@ -219,14 +219,78 @@ With camera and arm calibration done, I had a clearly defined global coordinate 
 The idea behind my method for determining LED positions is fairly simple: I bought a [40mm diameter steel ball](https://www.amazon.de/dp/B0B8G7FP75), which I placed on top of a bottlecap on the turntable, a bit off-center. By capturing images of the ball at a few different turntable angles, and with one LED enabled at a time, one can use the position of the reflection of the LED on the ball at each angle, alongside the balls size and the camera calibration, to determine where the position of the LED must be. That said, the devil is in the details, and this turned out to be the most complicated calibration step overall. For that reason, I will gloss over some of the less interesting details. 
 ![[Pasted image 20261114234524.png]]
 
-The steps involved in this process can be roughly summarized as:
+The steps involved in my first attempt at this process can be roughly summarized as:
 1. Take an image of the ball with on LED lit at a time, at a few different turntable positions.
-2. Find where the ball is on each image by searching for its outline. Use this to determine its position in global space.
-3. Find where the LED's reflection is on each image by searching for the brightest pixel.
+2. Find where the LED's reflection is on each image by searching for the brightest pixel.
+3. Find where the ball is at each angle by searching for its outline. Use this to determine its position in camera space.
 4. Reflect the camera's view direction off the ball at the reflection's position, which gives a ray direction from the reflection position to the LED.
-5. Intersect the reflection-to-LED rays at each turntable angle with each other. The position where they intersect is the LED position.
+5. Intersect the reflection-to-LED rays at each turntable angle with each other. The position where they intersect is the LED position. Convert this position to global space.
 
-For
+The first step is pretty simple. I placed the ball on the turntable, moved the arm to 0 degrees, and configured the camera with a fixed exposure of 1ms and no post-processing (auto-exposure off, auto white-balance off, denoising off, etc.). I used 4 turntable angles, each 90 degrees apart. For each angle, and for each LED, I enabled just that single LED, waited a moment for the image to settle, then took a raw image capture. Here's how the images look for one specific LED at each angle:![[led777_crop.gif]]
+
+Next I needed to locate the center of the reflection on each image. The image is a raw capture, before [demosaicing](https://en.wikipedia.org/wiki/Demosaicing), so I needed to apply a bit of postprocessing to make this step reliable. First, I sum each 2x2 bayer cell into a single brightness value. Then I apply a slightly gaussian blur to avoid issues due to noise. Finally, I locate the brightest bayer cell, which should be the center of the reflection. Here's a cropped animation of this in action:
+![[highlight_steps.gif]]
+
+I also needed to know the balls position at each frame. As you can see from the single-LED captures, the outline of the ball is barely visible. So instead, I capture an image at each angle with every LED visible and a longer 200ms exposure. This made the ball clearly visible, but it still took quite a bit of experimentation to make detecting the outline reliable. Here's what I came up with:
+1. Make an initial guess at where the ball is. The 200ms is intentionally very high, and causes the reflections of the LEDs to saturate to the maximum value. Use `cv2.connectedComponentsWithStats()` to find blobs of neighboring saturated pixels, and assume that the largest one is the dome reflection. Then use `cv2.minEnclosingCircle()` to find the minimum enclosing circle around that blob.
+2. From the center of the rough guess, sample the brightness along 360 lines (one per degree), starting just outside the rough circle. Along each line, compute how much the brightness increases from each pixel to the next. Where the increase is at least 30% as large as the largest increase along that line, the pixel becomes an "edge candidate".
+3. Pick 3 candidates on 3 different lines at random, compute the circle through those 3 points, and count how many lines have a candidate within a few pixels of that circle. Repeat this a few thousand time, and keep the circle that most lines agree with.
+![[ball_steps (1).gif]]
+With the outline determined, the balls position in camera space can be determined like so: First use `cv2.undistortPoints()` on the point at the center of the outline, with the aforementioned camera calibration, and normalize, to get the direction from the camera to the center. Then do the same for a point anywhere on the outline, to get a direction from the camera that is tangent to the ball. These 2 directions, along with the balls known radius, form a right angle triangle where the hypotenuse length is the distance from camera to ball center.
+![[Pasted image 20261115013711.png]]
+The angle between the 2 directions can be obtained using the dot product, $\alpha = acos(e \cdot c)$. The distance to the center can then be computed from the known radius and the angle: $d = R / sin(\alpha)$. Finally, the balls position is given by multiplying the center direction and distance: $P = d \ c$.
+
+The next step is to reflect the ray from the camera to each reflection position over the balls normal. First, I use `cv2.undistortPoints()` on the reflection pixel and normalize to get the direction $v$ from the camera to the reflection position. A ray along this direction will intersect the ball at a distance given by the following quadratic (TODO explain why):
+$$
+t = (v \cdot P) - \sqrt{(v \cdot P)^2 - |P|^2 + R^2} 
+$$
+Solving the quadratic and taking the closer of the 2 solutions yields a hit point $H = t \ v$. Next, I determine the surface normal $n$ by simply normalizing the vector between $H$ and $P$, i.e. $n=(H-P)/R$. Finally, I reflect the ray direction over the normal using the typical formula for vector reflection to obtain the final ray direction $r$:
+$$
+r = v - 2(v \cdot n) n
+$$
+The ray starting at position $H$ and travelling in direction $r$ will intersect the LED.
+![[Pasted image 20261115015107.png]]
+
+The final step is to determine where the computed rays for each LED (one per turntable angle) intersect, in order to get the LED position. Due to measurement error, the rays won't actually perfectly intersect, so I instead treat this as an optimization problem. For some arbitrary point $X$, the shortest distance from $X$ to one of our rays is:
+$$
+|M_i \ (X - H_i)|
+$$
+Where
+$$
+M_i = I - r_i \ r_i^\top
+$$
+Here, $H_i$ and $r_i$ are the position and direction of the $i$'th ray, $I$ is the identity matrix, and $M_i$ is a matrix that projects any vector onto the plane perpendicular to $r_i$. To get a plausible intersection for each LED, I choose a value for $X$ that minimize the sum of squared shortest distances:
+$$
+\mathop{\arg \min}\limits_{X} \big(\sum |M_i \ (X - H_i)|^2\big)
+$$
+I just used an off-the-shelf least squares solver, `np.linalg.lstsq()`, to solve this and determine $X$.
+
+When I ran this whole pipeline the first time, the LED positions I got were pretty useless:
+![[Pasted image 20261115022021.png]]
+A few more fixes are needed before these can be of any use. The most pressing issue is that nothing enforces the constraint that all LEDs should lie on the surface of the same sphere. Because the rays for an LED at each turntable angle are near-parallel, their intersection is quite hard to pin down, and varies greatly with tiny perturbations of the rays. To fix this, I added an additional step. Let $X_j$ be the computed position of LED $j$. $X_j$ lies on a sphere with center $C$ and radius $p$ when:
+$$
+|X_j - C|^2 = p^2
+$$
+Expanding this, I get:
+$$
+p^2 = |X_j|^2-2X_j \cdot C + |C|^2
+$$
+Collecting the unknown constants into one number $k=p^2 - |C|^2$ gives:
+$$
+2X_j \cdot C + k = |X_j|^2
+$$
+Which is a linear system of equations with 4 unknowns $(C_x, C_y, C_z, k)$. Similarly to how I determined the ray intersections before, I used `numpy.linalg.lstsq` to find the $C$ and $k$ that minimize the squared distances from the LED positions to the sphere:
+$$
+\mathop{\arg \min}\limits_{C,\ k} \big(\sum (2X_j \cdot C + k - |X_j|^2)^2\big)
+$$
+With the best $C$ and $k$ determined, the radius $p$ is computed by $p = \sqrt{k + |C|^2}$. I replaced each LED position with the average of the intersection points of each of the LED's rays and the sphere described by $C$ and $p$. After this, the result looks a lot better:
+![[led_stage_1_dome_sphere 1.png]]
+
+The next issue is that there seems to be a region with particularly noisy/bogus LED positions in a band passing through the center of the dome. This turns out to be explained by occlusion. Some LEDs have no reflections at certain turntable angles, because they are occluded by the camera arm. Such samples will result in completely incorrect LED positions, because some random noise will be treated as a reflection. To fix this, I captured a frame at each turntable position, but with every LED off. I call these "dark frames". For each frame captured with an LED enabled, I subtract the corresponding dark frame. What is left is _only_ the light from the enabled LED. If the brightest pixel is below a small threshold after that subtraction, I assume that the LED is occluded, and the frame is discarded, never to be used to determine LED positions. The result after applying the fix looks like so:
+![[led_stage_2_reject_missing_reflections.png]]
+
+Much better. However, there is still an issue remaining: After rejecting occluded samples, some LEDs will have no data at all, and I am thus unable to calculate a position for them. To solve that, I added an interpolation step. The code for this is kind of fiddly and specific to my setup, so I will only briefly describe it. I knew how the LED strips are laid out. For each known LED position, I determined which LED strip and which index on the strip the LED corresponds to. I wrote each known LED's direction to a table indexed by strip and index-in-strip. For each unknown LED position (the missing entries in the table), I determined the neighboring LEDs and interpolated the direction from the dome center between them using a spherical lerp, then placed the LED on the fitted sphere. The result looks like so, with the interpolated LEDs colored orange:![[Pasted image 20261115022542.png]]
+Close enough!
 ### Image preparation
 - Exposure, white balance, gain
 - HDR exposure bracketing
